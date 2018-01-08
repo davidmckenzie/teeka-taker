@@ -21,8 +21,7 @@ var defaults = {};
         webhookURL: ''
     }
     defaults.lastPost = {
-        date: '2017-12-22T10:25:00',
-        id: 0
+        date: '2017-12-22T10:25:00'
     };
 
 // create config file if it does not exist, and set defaults
@@ -56,6 +55,13 @@ var proxiedRequest = request.defaults({
       }
 });
 
+var openRequest = request.defaults({
+    'rejectUnauthorized': false,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
+      }
+});
+
 function uniq(a) {
     var prims = {"boolean":{}, "number":{}, "string":{}}, objs = [];
     return a.filter(function(item) {
@@ -68,25 +74,32 @@ function uniq(a) {
 }
 
 var afterDate = lastPost.date;
-proxiedRequest.get(`http://www.palmbeachgroup.com/wp-json/wp/v2/posts?after=${afterDate}`, function(error, response, body) {
-    if (!error && response.statusCode == 200) {
-        if (response.body) {
-            var posts = JSON.parse(response.body);
-            if (posts.length > 0) {
-                postLoop(posts);
-                //console.log('outside of postLoop function\n');
-            } else {
-                console.log(`Error maybe...`);
-                console.log(posts);
-            }
-       }
-    } else {
-        console.log('Error or status not equal 200.');
-        console.log(error);
-        console.log(response.body);
-    }
-});
 
+function postCheckLoop() {
+    console.log('Checking for new posts...');
+    openRequest.get(`http://www.palmbeachgroup.com/wp-json/wp/v2/posts?after=${afterDate}`, function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            if (response.body) {
+                var posts = JSON.parse(response.body);
+                if (posts.length > 0) {
+                    afterDate = posts[0].date;
+                    nconf.set('lastPost', {'date': afterDate});
+                    nconf.save();
+                    postLoop(posts);
+                } else {
+                    console.log(`No new posts`);
+                }
+           }
+        } else {
+            console.log('Error or status not equal 200.');
+            console.log(error);
+            console.log(response.body);
+        }
+    });
+}
+
+postCheckLoop();
+var intervalID = setInterval(postCheckLoop, 60000);
 
 function postLoop(posts) {
     var post = posts.shift();
@@ -99,23 +112,29 @@ function postLoop(posts) {
     } else {
         catString = 'Unknown Category';
     }
+    if (!post.retryCount) {
+        post.retryCount = 0;
+    }
     console.log('\n==================\n');
     console.log(`Post: ${post.id} Title: ${post.title.rendered.replace(/<[^>]+>/g, '')}`);
-    console.log(`URL: ${post.link} Type: ${post.type}\n`);
+    console.log(`URL: ${post.link} Type: ${post.type}`);
+    console.log(`Retry Count: ${post.retryCount}\n`);
     console.log('Waiting 5 seconds...\n');
 
-    var init_data = {};
+    if(post.retryCount == 0) {
+        var init_data = {};
         init_data.username = `xXx_t33Kd_n0sc0pe_360`;
         init_data.content = `@everyone Standby for PBC ${catString}: ${post.title.rendered.replace(/<[^>]+>/g, '')}`;
-    var initHook = {
-        method: 'post',
-        body: init_data,
-        json: true,
-        url: settings.webhookURL
+        var initHook = {
+            method: 'post',
+            body: init_data,
+            json: true,
+            url: settings.webhookURL
+        }
+        request(initHook, function(err, res, body) {
+            if (err) {console.error('error posting json: ', err)};
+        });
     }
-    request(initHook, function(err, res, body) {
-        if (err) {console.error('error posting json: ', err)};
-    });
 
     setTimeout(function() {
         console.log('==================\n');
@@ -278,8 +297,25 @@ function postLoop(posts) {
         }).then(function (retVal) {
             console.log(retVal);
             if(retVal && retVal == 'error') {
-                posts.unshift(post);
-                console.log('error accessing post, retrying');
+                post.retryCount++;
+                if(post.retryCount < 30) {
+                    posts.unshift(post);
+                    console.log('error accessing post, retrying');
+                } else {
+                    console.log(`max retries hit, giving up`);
+                    var retry_data = {};
+                        retry_data.username = `xXx_t33Kd_n0sc0pe_360`;
+                        retry_data.content = `Error: Couldn't access PBC Post ${title}\nGave up after 30 retries.`;
+                    var retryHook = {
+                        method: 'post',
+                        body: retry_data,
+                        json: true,
+                        url: settings.webhookURL
+                    }
+                    request(retryHook, function(err, res, body) {
+                        if (err) {console.error('error posting json: ', err)};
+                    });
+                }
             }
             if(retVal && retVal == 'no-access') {
                 console.log('no access to post, not retrying');
@@ -305,7 +341,25 @@ function postLoop(posts) {
             console.log('connection failed, retrying');
             if (err)
                 console.log(err);
-            posts.unshift(post);
+                post.retryCount++;
+            if(post.retryCount < 30) {
+                posts.unshift(post);
+                console.log('error accessing post, retrying');
+            } else {
+                console.log(`max retries hit, giving up`);
+                var retry_data = {};
+                    retry_data.username = `xXx_t33Kd_n0sc0pe_360`;
+                    retry_data.content = `Error: Couldn't access PBC Post ${title}\nGave up after 30 retries.`;
+                var retryHook = {
+                    method: 'post',
+                    body: retry_data,
+                    json: true,
+                    url: settings.webhookURL
+                }
+                request(retryHook, function(err, res, body) {
+                    if (err) {console.error('error posting json: ', err)};
+                });
+            }
             postLoop(posts);
         });
         //console.log('inside of settimeout function\n');
