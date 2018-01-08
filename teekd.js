@@ -127,7 +127,7 @@ function postLoop(posts) {
 
     if(post.retryCount == 0) {
         var init_data = {};
-        init_data.username = `xXx_t33Kd_n0sc0pe_720`;
+        init_data.username = `TeekaBot`;
         init_data.content = `@everyone Standby for PBC ${catString}: ${post.title.rendered.replace(/<[^>]+>/g, '')}`;
         var initHook = {
             method: 'post',
@@ -234,7 +234,7 @@ function postLoop(posts) {
                 }
 
                 var post_data = {};
-                    post_data.username = `xXx_t33Kd_n0sc0pe_720`;
+                    post_data.username = `TeekaBot`;
                 var postContent = `**${title}**\n\n`;
 
                 if (primaryCoin && primaryText) {
@@ -308,7 +308,7 @@ function postLoop(posts) {
                 } else {
                     console.log(`max retries hit, giving up`);
                     var retry_data = {};
-                        retry_data.username = `xXx_t33Kd_n0sc0pe_720`;
+                        retry_data.username = `TeekaBot`;
                         retry_data.content = `Error: Couldn't access PBC Post ${title}\nGave up after 30 retries.`;
                     var retryHook = {
                         method: 'post',
@@ -324,7 +324,7 @@ function postLoop(posts) {
             if(retVal && retVal == 'no-access') {
                 console.log('no access to post, not retrying');
                 var err_data = {};
-                    err_data.username = `xXx_t33Kd_n0sc0pe_720`;
+                    err_data.username = `TeekaBot`;
                     err_data.content = `Error: Couldn't access PBC Post ${title}`;
                 var errHook = {
                     method: 'post',
@@ -352,7 +352,7 @@ function postLoop(posts) {
             } else {
                 console.log(`max retries hit, giving up`);
                 var retry_data = {};
-                    retry_data.username = `xXx_t33Kd_n0sc0pe_720`;
+                    retry_data.username = `TeekaBot`;
                     retry_data.content = `Error: Couldn't access PBC Post ${title}\nGave up after 30 retries.`;
                 var retryHook = {
                     method: 'post',
