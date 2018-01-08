@@ -103,7 +103,7 @@ function postCheckLoop() {
 }
 
 postCheckLoop();
-var intervalID = setInterval(postCheckLoop, 60000);
+//var intervalID = setInterval(postCheckLoop, 60000);
 
 function postLoop(posts) {
     var post = posts.shift();
