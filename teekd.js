@@ -96,6 +96,10 @@ function postCheckLoop() {
             console.log(response.body);
         }
     });
+
+    var rand = Math.floor(Math.random()*(30000-5000+1)+5000);
+    console.log(`Checking in ${rand / 1000} seconds`);
+    setTimeout(postCheckLoop, rand);
 }
 
 postCheckLoop();
