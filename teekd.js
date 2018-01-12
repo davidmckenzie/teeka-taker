@@ -58,7 +58,8 @@ var proxiedRequest = request.defaults({
 var openRequest = request.defaults({
     'rejectUnauthorized': false,
     headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
+        'Host': 'www.palmbeachgroup.com'
       }
 });
 
@@ -77,7 +78,7 @@ var afterDate = lastPost.date;
 
 function postCheckLoop() {
     console.log('Checking for new posts...');
-    openRequest.get(`http://www.palmbeachgroup.com/wp-json/wp/v2/posts?after=${afterDate}`, function(error, response, body) {
+    openRequest.get(`https://ftp.palmbeachgroup.com/wp-json/wp/v2/posts?after=${afterDate}`, function(error, response, body) {
         if (!error && response.statusCode == 200) {
             if (response.body) {
                 var posts = JSON.parse(response.body);
@@ -206,8 +207,8 @@ function postLoop(posts) {
                     matches.push($(this).parent().text());
                   });
                 var uniqMatch = uniq(matches);
-                var primaryCoin;
-                var primaryText;
+                var primaryCoin = [];
+                var primaryText = '';
                 var coinArr = [];
                 var actionArr = [];
                 var junkArr = [];
@@ -218,10 +219,8 @@ function postLoop(posts) {
                                 var coinMatch = uniqMatch[i].match(/\([0-9A-Z^]+\)/g);
                                 console.log(coinMatch);
                                 if (coinMatch && coinMatch.length > 0)
-                                    primaryCoin = coinMatch[0];
-                                else
-                                    primaryCoin = 'unknown';
-                                primaryText = uniqMatch[i];
+                                    primaryCoin.push(coinMatch[0]);
+                                primaryText += uniqMatch[i]+`\n\n`;
                                 coinArr = coinArr.concat(uniqMatch[i].match(/\([0-9A-Z^]+\)/g));
                             } else {
                                 coinArr = coinArr.concat(uniqMatch[i].match(/\([0-9A-Z^]+\)/g));
@@ -237,11 +236,11 @@ function postLoop(posts) {
                     post_data.username = `TeekaBot`;
                 var postContent = `**${title}**\n\n`;
 
-                if (primaryCoin && primaryText) {
-                    console.log(`Primary Coin: ${primaryCoin}`);
-                    postContent += `**Primary Coin: ${primaryCoin}**\n\n`;
+                if (primaryCoin.length > 0 && primaryText) {
+                    console.log(`Primary Coins: ${primaryCoin}`);
+                    postContent += `**Primary Coins: ${primaryCoin}**\n\n`;
                     console.log(`Primary Text: ${primaryText}`);
-                    postContent += `**Primary Text:**\n\n${primaryText}\n\n`;
+                    postContent += `**Primary Text:**\n\n${primaryText}`;
                     if(uniq(coinArr).length == 1 && uniq(coinArr)[0] == primaryCoin) {
                         console.log('\nNo extra coins');
                     } else {
@@ -325,7 +324,7 @@ function postLoop(posts) {
                 console.log('no access to post, not retrying');
                 var err_data = {};
                     err_data.username = `TeekaBot`;
-                    err_data.content = `Error: Couldn't access PBC Post ${title}`;
+                    err_data.content = `False alarm - PBC post not available. This post was likely targeted at Teekas stock market customers.`;
                 var errHook = {
                     method: 'post',
                     body: err_data,
