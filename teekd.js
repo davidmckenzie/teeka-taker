@@ -4,6 +4,17 @@ var fs = require('fs');
 //var auth = require('./auth.json');
 const puppeteer = require('puppeteer');
 
+const express = require('express');
+const app = express();
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+
+
+io.on('connection', function(){
+  console.log('New Client Connected!');
+});
+server.listen(3050);
+
 // set up defaults
 var defaults = {};
     defaults.proxy = {
@@ -147,7 +158,7 @@ function postLoop(posts) {
         var url = post.link;
         //var url = 'https://httpstat.us/500';
         var id = post.id;
-    
+
         puppeteer.launch(pOpts).then(async browser => {
             var page = await browser.newPage();
             page.authenticate({username: proxyConf.user, password: proxyConf.pass});
@@ -165,7 +176,7 @@ function postLoop(posts) {
                 browser.close();
                 return('error');
             }
-    
+
             if (await page.$('#user_login') !== null) {
                 console.log('not logged in');
                 await page.waitForSelector('#user_login', {'visible': true});
@@ -237,6 +248,18 @@ function postLoop(posts) {
                 var postContent = `**${title}**\n\n`;
 
                 if (primaryCoin.length > 0 && primaryText) {
+                    //throw all eventing logic in a try/catch so we don't break overall functionality
+                    try {
+                      //split in case multiple primary coins are calculated
+                      let primaryCoinList = primaryCoin.replace('(','').replace(')','').split(',');
+                      io.emit('teeka', {
+                        coins: primaryCoinList
+                      });
+                    }
+                    catch(e) {
+                      console.log(`Error caught in eventing logic: ${e}`);
+                    }
+
                     console.log(`Primary Coins: ${primaryCoin}`);
                     postContent += `**Primary Coins: ${primaryCoin}**\n\n`;
                     console.log(`Primary Text: ${primaryText}`);
