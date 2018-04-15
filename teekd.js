@@ -251,7 +251,7 @@ function postLoop(posts) {
                     //throw all eventing logic in a try/catch so we don't break overall functionality
                     try {
                       //split in case multiple primary coins are calculated
-                      let primaryCoinList = primaryCoin.replace('(','').replace(')','').split(',');
+                      let primaryCoinList = primaryCoin.join(',').replace(/\(|\)/g, '').split(',');
                       io.emit('teeka', {
                         coins: primaryCoinList
                       });
