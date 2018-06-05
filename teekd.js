@@ -119,7 +119,7 @@ postCheckLoop();
 
 function postLoop(posts) {
     var post = posts.shift();
-    var delay = 5000;
+    var delay = 3000;
     var catString;
     if (post.categories.indexOf(33) > -1) {
         catString = 'Update';
@@ -135,7 +135,7 @@ function postLoop(posts) {
     console.log(`Post: ${post.id} Title: ${post.title.rendered.replace(/<[^>]+>/g, '')}`);
     console.log(`URL: ${post.link} Type: ${post.type}`);
     console.log(`Retry Count: ${post.retryCount}\n`);
-    console.log('Waiting 5 seconds...\n');
+    console.log('Waiting 3 seconds...\n');
 
     if(post.retryCount == 0) {
         var init_data = {};
@@ -191,6 +191,8 @@ function postLoop(posts) {
                 await page.tap('.checkbox > label:nth-child(1) > input:nth-child(1)');
                 await page.tap('button.btn');
                 await page.waitFor(5000);
+                await page.screenshot({path: 'screenshot.png'});
+                await page.goto(url);
                 await page.screenshot({path: 'screenshot.png'});
             } else {
                 console.log('already logged in');
